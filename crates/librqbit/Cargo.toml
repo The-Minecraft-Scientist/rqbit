@@ -12,7 +12,8 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["default-tls"]
+default = ["default-tls", "http_api"]
+http_api = ["axum", "tower-http", "http"]
 webui = []
 timed_existence = []
 default-tls = ["reqwest/default-tls"]
@@ -32,15 +33,15 @@ dht = { path = "../dht", package = "librqbit-dht", version = "5.0.3" }
 librqbit-upnp = { path = "../upnp", version = "0.1.0" }
 
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
-axum = { version = "0.7.4" }
-tower-http = { version = "0.5", features = ["cors", "trace"] }
+axum = { version = "0.7.4", optional = true }
+tower-http = { version = "0.5", features = ["cors", "trace"], optional = true}
 tokio-stream = "0.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_urlencoded = "0.7"
 anyhow = "1"
 itertools = "0.12"
-http = "1"
+http = { version = "1", optional = true }
 regex = "1"
 reqwest = { version = "0.12", default-features = false, features = ["json"] }
 urlencoding = "2"

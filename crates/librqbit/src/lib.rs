@@ -25,15 +25,20 @@
 
 #![warn(clippy::cast_possible_truncation)]
 
+#[cfg(feature = "http_api")]
 pub mod api;
+#[cfg(feature = "http_api")]
 mod api_error;
 mod chunk_tracker;
 mod create_torrent_file;
 mod dht_utils;
 pub mod file_info;
 mod file_ops;
+#[cfg(feature = "http_api")]
 pub mod http_api;
+#[cfg(feature = "http_api")]
 pub mod http_api_client;
+
 mod merge_streams;
 mod peer_connection;
 mod peer_info_reader;
@@ -44,8 +49,9 @@ pub mod storage;
 mod torrent_state;
 pub mod tracing_subscriber_config_utils;
 mod type_aliases;
-
+#[cfg(feature = "http_api")]
 pub use api::Api;
+#[cfg(feature = "http_api")]
 pub use api_error::ApiError;
 pub use create_torrent_file::{create_torrent, CreateTorrentOptions};
 pub use dht;
