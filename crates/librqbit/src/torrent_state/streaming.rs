@@ -8,7 +8,7 @@ use std::{
     task::{Poll, Waker},
 };
 
-use anyhow::Context;
+use anyhow::{anyhow, bail, Context};
 use dashmap::DashMap;
 
 use librqbit_core::lengths::{CurrentPiece, Lengths, ValidPieceIndex};
@@ -311,7 +311,35 @@ impl ManagedTorrent {
             .unwrap_or(false)
     }
 
-    pub fn stream(self: Arc<Self>, file_id: usize) -> anyhow::Result<FileStream> {
+    pub fn stream(self: Arc<Self>, file_id: usize, position: u64) -> anyhow::Result<FileStream> {
+        let file = self.info.file_infos[file_id].clone();
+        let mut w = self.locked.write();
+        match &mut w.state {
+            crate::ManagedTorrentState::Initializing(i) => {
+                bail!("tried to stream a torrent while it was still initializing!");
+            }
+            crate::ManagedTorrentState::Paused(paused) => {
+                paused.chunk_tracker.select_range(
+                    file.offset_in_torrent + position,
+                    file.offset_in_torrent + file.len - 1,
+                )?;
+            }
+            crate::ManagedTorrentState::Live(live) => {
+                live.lock_write("select stream")
+                    .chunks
+                    .as_mut()
+                    .context(
+                        "Live torrent did not have Chunks when trying to select file for streaming",
+                    )?
+                    .select_range(
+                        file.offset_in_torrent + position,
+                        file.offset_in_torrent + file.len - 1,
+                    )?;
+            }
+            crate::ManagedTorrentState::Error(_) => bail!("error!"),
+            crate::ManagedTorrentState::None => bail!("Error"),
+        }
+        drop(w);
         let (fd_len, fd_offset) =
             self.with_storage_and_file(file_id, |_fd, fi| (fi.len, fi.offset_in_torrent))?;
         let streams = self.streams()?;
@@ -319,7 +347,7 @@ impl ManagedTorrent {
             stream_id: streams.next_id(),
             streams: streams.clone(),
             file_id,
-            position: 0,
+            position,
 
             file_len: fd_len,
             file_torrent_abs_offset: fd_offset,

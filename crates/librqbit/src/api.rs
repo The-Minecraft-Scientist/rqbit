@@ -246,7 +246,7 @@ impl Api {
 
     pub fn api_stream(&self, idx: TorrentId, file_id: usize) -> Result<FileStream> {
         let mgr = self.mgr_handle(idx)?;
-        Ok(mgr.stream(file_id)?)
+        Ok(mgr.stream(file_id, 0)?)
     }
 }
 

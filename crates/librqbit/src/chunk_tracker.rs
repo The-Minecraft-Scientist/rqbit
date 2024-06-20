@@ -311,7 +311,19 @@ impl ChunkTracker {
         }
         Some(ChunkMarkingResult::NotCompleted)
     }
-
+    pub fn select_range(&mut self, start_abs_idx: u64, end_abs_idx: u64) -> anyhow::Result<()> {
+        let mut piece_it = self.lengths.iter_piece_infos();
+        let mut len_accum = 0u64;
+        loop {
+            let piece = piece_it.next().context("iter_piece_info ended early")?;
+            len_accum += piece.len as u64;
+            if len_accum > start_abs_idx {
+                while len_accum < end_abs_idx {
+                    self.queue_pieces.set(piece.piece_index.get_usize(), true);
+                }
+            }
+        }
+    }
     // NOTE: this doesn't validate new_only_files.
     // E.g. if there are indices there that don't make
     // sense, they will be ignored.
